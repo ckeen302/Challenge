@@ -1,136 +1,83 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('appointmentForm');
-    const formFeedback = document.getElementById('formFeedback');
-    const successModal = document.getElementById('successModal');
+    const petTypeSelect = document.getElementById('petType');
+    const otherPetTypeGroup = document.getElementById('otherPetTypeGroup');
+    const serviceSelect = document.getElementById('service');
+    const otherServiceGroup = document.getElementById('otherServiceGroup');
+
+    petTypeSelect.addEventListener('change', function() {
+        otherPetTypeGroup.style.display = this.value === 'other' ? 'block' : 'none';
+    });
+
+    serviceSelect.addEventListener('change', function() {
+        otherServiceGroup.style.display = this.value === 'other' ? 'block' : 'none';
+    });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        clearErrors();
-        
         if (validateForm()) {
-            // Simulate form submission
-            showLoadingState();
-            setTimeout(function() {
-                showSuccessModal();
-                form.reset();
-                hideLoadingState();
-            }, 1500);
+            submitForm();
         }
     });
 
     function validateForm() {
         let isValid = true;
-        const errors = {};
+        const requiredFields = form.querySelectorAll('[required]');
+        const errorMessages = document.querySelectorAll('.error');
 
-        // Name validation
-        const name = document.getElementById('name').value.trim();
-        if (!name) {
-            errors.name = 'Name is required';
-            isValid = false;
-        } else if (name.length < 2) {
-            errors.name = 'Name must be at least 2 characters long';
-            isValid = false;
-        }
+        errorMessages.forEach(msg => msg.remove());
 
-        // Pet name validation
-        const petName = document.getElementById('petName').value.trim();
-        if (!petName) {
-            errors.petName = 'Pet name is required';
-            isValid = false;
-        }
-
-        // Appointment time validation
-        const appointmentTime = document.getElementById('appointmentTime').value;
-        if (!appointmentTime) {
-            errors.appointmentTime = 'Please select an appointment time';
-            isValid = false;
-        } else {
-            const selectedTime = new Date(appointmentTime);
-            const now = new Date();
-            if (selectedTime < now) {
-                errors.appointmentTime = 'Please select a future date and time';
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
                 isValid = false;
+                showError(field, 'This field is required');
+            } else if (field.type === 'email' && !isValidEmail(field.value)) {
+                isValid = false;
+                showError(field, 'Please enter a valid email address');
+            } else if (field.type === 'tel' && !isValidPhone(field.value)) {
+                isValid = false;
+                showError(field, 'Please enter a valid phone number');
             }
+        });
+
+        if (petTypeSelect.value === '') {
+            isValid = false;
+            showError(petTypeSelect, 'Please select a pet type');
         }
 
-        // Email validation
-        const email = document.getElementById('email').value.trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email) {
-            errors.email = 'Email is required';
+        if (serviceSelect.value === '') {
             isValid = false;
-        } else if (!emailRegex.test(email)) {
-            errors.email = 'Please enter a valid email address';
-            isValid = false;
-        }
-
-        // Phone validation
-        const phone = document.getElementById('phone').value.trim();
-        const phoneRegex = /^\+?[\d\s-]{10,}$/;
-        if (!phone) {
-            errors.phone = 'Phone number is required';
-            isValid = false;
-        } else if (!phoneRegex.test(phone)) {
-            errors.phone = 'Please enter a valid phone number';
-            isValid = false;
-        }
-
-        if (!isValid) {
-            showErrors(errors);
-            showFeedback('Please correct the errors in the form.', 'error');
+            showError(serviceSelect, 'Please select a service');
         }
 
         return isValid;
     }
 
-    function showErrors(errors) {
-        Object.keys(errors).forEach(field => {
-            const errorSpan = document.querySelector(`[data-error="${field}"]`);
-            if (errorSpan) {
-                errorSpan.textContent = errors[field];
-            }
-        });
+    function showError(field, message) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'error';
+        errorElement.textContent = message;
+        field.parentNode.appendChild(errorElement);
     }
 
-    function clearErrors() {
-        const errorSpans = document.querySelectorAll('.error-message');
-        errorSpans.forEach(span => span.textContent = '');
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    function showFeedback(message, type) {
-        formFeedback.textContent = message;
-        formFeedback.className = `feedback-message ${type}`;
-        formFeedback.style.display = 'block';
+    function isValidPhone(phone) {
+        return /^\+?[\d\s-]{10,}$/.test(phone);
+    }
 
+    function submitForm() {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Simulating an API call
         setTimeout(() => {
-            formFeedback.style.display = 'none';
-        }, 5000);
-    }
-
-    function showSuccessModal() {
-        successModal.style.display = 'flex';
-    }
-
-    window.closeModal = function() {
-        successModal.style.display = 'none';
-    }
-
-    function showLoadingState() {
-        const submitButton = form.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Scheduling...';
-    }
-
-    function hideLoadingState() {
-        const submitButton = form.querySelector('button[type="submit"]');
-        submitButton.disabled = false;
-        submitButton.textContent = 'Schedule Appointment';
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        if (event.target == successModal) {
-            closeModal();
-        }
+            console.log('Form submitted:', data);
+            alert('Appointment scheduled successfully!');
+            form.reset();
+        }, 1000);
     }
 });
+
